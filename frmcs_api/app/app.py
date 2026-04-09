@@ -1,6 +1,8 @@
 from fastapi import FastAPI
+import asyncio
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+from pydantic import BaseModel
 
 from app.lego_train import LegoTrain
 from app.ble_manager import BLEManager
@@ -15,6 +17,14 @@ express = LegoTrain("Express", EXPRESS_MAC, 0)
 cargo = LegoTrain("Cargo", CARGO_MAC, 20)
 
 
+class SpeedRequest(BaseModel):
+    speed: int
+
+class LightRequest(BaseModel):
+    brightness: int
+
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # START
@@ -26,17 +36,17 @@ async def lifespan(app: FastAPI):
     print("Stopping app...")
 
     if express.client and express.client.is_connected:
-        await express.client.disconnect()
+        await express.disconnect() # express.client.disconnect()
     
     if cargo.client and cargo.client.is_connected:
-        await cargo.stop()
+        await cargo.disconnect() # cargo.stop()
 
 
 app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3000", "http://192.168.0.87:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -46,7 +56,7 @@ app.add_middleware(
 # Test
 @app.get("/")
 def home():
-    return {"message": "FRMCS API"}
+    return {"status": "success", "message": "FRMCS API"}
 
 
 # Connect
@@ -54,7 +64,8 @@ def home():
 async def connect_express():
     try:
         await express.connect()
-        return {"status": "express connected"}
+        await asyncio.sleep(1)
+        return {"status": "success", "message": "express connected"}
 
     except Exception as e:
         return {
@@ -67,7 +78,8 @@ async def connect_express():
 async def connect_cargo():
     try:
         await cargo.connect()
-        return {"status": "cargo connected"}
+        await asyncio.sleep(1)
+        return {"status": "success", "message": "cargo connected"}
 
     except Exception as e:
         return {
@@ -78,63 +90,103 @@ async def connect_cargo():
 
 # speed
 @app.post("/express/speed")
-async def express_speed(speed: int):
-    if not express.client or not express.client.is_connected:
-        await express.connect()
+async def express_speed(req: SpeedRequest):
+    try:
+        print("Incoming speed:", req.speed)
+        if not express.client or not express.client.is_connected:
+            await express.connect()
 
-    await express.send_speed(speed)
-    return {"express_speed": speed}
+        await express.send_speed(req.speed)
+
+        return {"status": "success", "speed": req.speed}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 
 @app.post("/cargo/speed")
-async def cargo_speed(speed: int):
-    if not cargo.client or not cargo.client.is_connected:
-        await cargo.connect()
+async def cargo_speed(req: SpeedRequest):
+    try:
+        print("Incoming speed:", req.speed)
+        if not cargo.client or not cargo.client.is_connected:
+            await cargo.connect()
 
-    await cargo.send_speed(speed)
-    return {"cargo_speed": speed}
+        await cargo.send_speed(req.speed)
+
+        return {"status": "success", "speed": req.speed}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 
 # stop
 @app.post("/express/stop")
 async def express_stop():
-    await express.stop()
-    return {"status": "express stopped"}
+    try:
+        await express.stop()
+        return {"status": "success", "message": "express stopped"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 
 @app.post("/cargo/stop")
 async def cargo_stop():
-    await cargo.stop()
-    return {"status": "cargo stopped"}
+    try:
+        await cargo.stop()
+        return {"status": "success", "message": "cargo stopped"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 
 # disconnect
 @app.post("/express/disconnect")
 async def express_disconnect():
-    if express.client and express.client.is_connected:
-        await express.disconnect()
-        return {"status": "express disconnected"}
-    return {"status": "already disconnected"}
+    try:
+        if express.client and express.client.is_connected:
+            await express.stop()
+            await express.disconnect()
+            return {"status": "success", "message": "express disconnected"}
+        return {"status": "success", "message": "already disconnected"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 
 @app.post("/cargo/disconnect")
 async def cargo_disconnect():
-    if cargo.client and cargo.client.is_connected:
-        await cargo.disconnect()
-        return {"status": "cargo disconnected"}
-    return {"status": "already disconnected"}
+    try:
+        if cargo.client and cargo.client.is_connected:
+            await cargo.stop()
+            await cargo.disconnect()
+            return {"status": "success", "message": "cargo disconnected"}
+        return {"status": "success", "message": "already disconnected"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+# lights
+@app.post("/express/light")
+async def express_light(req: LightRequest):
+    return await express.set_light(req.brightness)
+
 
 
 # status
 @app.get("/status")
 async def status():
-    return {
-        "express": {
-            "speed": express.speed,
-            "connected": express.client.is_connected if express.client else False
-        },
-        "cargo": {
-            "speed": cargo.speed,
-            "connected": cargo.client.is_connected if cargo.client else False
+    try:
+        return {
+            "status": "success",
+            "data": {
+                "express": {
+                    "speed": express.speed,
+                    "connected": express.client.is_connected if express.client else False
+                },
+                "cargo": {
+                    "speed": cargo.speed,
+                    "connected": cargo.client.is_connected if cargo.client else False
+                }
+            }
         }
-    }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }

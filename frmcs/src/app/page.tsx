@@ -11,7 +11,31 @@ export default function Page() {
   const [cargoSpeed, setCargoSpeed] = useState(0);
   const [status, setStatus] = useState<any>(null);
 
-  const API = "http://localhost:8000";
+
+  const API = "http://192.168.0.87:8000";
+
+
+  const handleResponse = async (res: Response) => {
+    const data = await res.json();
+
+    if (!res.ok || data.status === "error") {
+      throw new Error(data.message || "Request failed");
+    }
+
+    return data;
+  };
+
+
+  type TrainStatus = {
+  speed: number;
+  connected: boolean;
+};
+
+type StatusResponse = {
+  express: TrainStatus;
+  cargo: TrainStatus;
+};
+
 
 
   // EXPRESS
@@ -22,35 +46,31 @@ export default function Page() {
     try {
       const res = await fetch(`${API}/express/connect`, { method: "POST" });
       
-      const data = await res.json();
+      await handleResponse(res);
 
+      setExpressConnected(true);
+      toast.success("Express connected");
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
       toast.dismiss(id);
-
-      if (data.status === "error") {
-        toast.error(data.message);
-      } else {
-        setExpressConnected(true);
-        toast.success("Express connected");
-      }
-    } catch (err) {
-      toast.dismiss(id);
-      toast.error("Error connecting express");
     }
   };
 
   const setExpress = async () => {
-    try {
-      const res = await fetch(`${API}/express/speed?speed=${expressSpeed}`, { method: "POST" });
+  try {
+      const res = await fetch(`${API}/express/speed`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ speed: expressSpeed }),
+      });
 
-      const data = await res.json();
-
-      if (data.status === "error") {
-        toast.error(data.message);
-      } else {
-        toast.success("Express speed updated");
-      }
-    } catch {
-      toast.error("Error setting express speed");
+      await handleResponse(res);
+      toast.success("Express speed updated");
+    } catch (err: any) {
+      toast.error(err.message);
     }
   };
 
@@ -118,17 +138,18 @@ export default function Page() {
 
   const setCargo = async () => {
     try {
-      const res = await fetch(`${API}/cargo/speed?speed=${cargoSpeed}`, { method: "POST" });
+      const res = await fetch(`${API}/cargo/speed`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ speed: cargoSpeed }),
+      });
 
-      const data = await res.json();
-
-      if (data.status === "error") {
-        toast.error(data.message);
-      } else {
-        toast.success("Cargo speed updated");
-      }
-    } catch {
-      toast.error("Error setting cargo speed");
+      await handleResponse(res);
+      toast.success("Cargo speed updated");
+    } catch (err: any) {
+      toast.error(err.message);
     }
   };
 
@@ -161,7 +182,7 @@ export default function Page() {
       if (data.status === "error") {
         toast.error(data.message);
       } else {
-        setExpressConnected(false);
+        setCargoConnected(false);
         toast.success("Cargo disconnected");
       }
     } catch {
@@ -174,19 +195,24 @@ export default function Page() {
   // STATUS
 
   const getStatus = async () => {
+    try {
     const res = await fetch(`${API}/status`);
-
     const data = await res.json();
 
-    if (data.status === "error") {
-      alert("Error: " + data.message);
-    } else {
-      alert("Disconnected");
+    if (!res.ok || data.status === "error") {
+      throw new Error(data.message || "Error fetching status");
     }
 
-    setStatus(data);
-  };
+    setStatus(data.data);
 
+    // opcjonalnie
+    setExpressConnected(data.data.express.connected);
+    setCargoConnected(data.data.cargo.connected);
+
+  } catch (err: any) {
+    toast.error(err.message);
+  }
+};
 
   return (
     <div className="space-y-10">
@@ -241,18 +267,24 @@ export default function Page() {
       </div>
 
       {/* STATUS */}
-      <div className="bg-gray-900 text-white p-6 rounded-2xl shadow">
-        <h2 className="text-xl mb-4">Status</h2>
+      <div className="bg-black p-4 rounded text-sm space-y-2">
+    <div>
+      Express:{" "}
+      <span className={expressConnected ? "text-green-400" : "text-red-400"}>
+        {expressConnected ? "Connected" : "Disconnected"}
+      </span>{" "}
+      | Speed: {expressSpeed}
+    </div>
 
-        <button onClick={getStatus} className="btn mb-4">
-          Refresh
-        </button>
+    <div>
+      Cargo:{" "}
+      <span className={cargoConnected ? "text-green-400" : "text-red-400"}>
+        {cargoConnected ? "Connected" : "Disconnected"}
+      </span>{" "}
+      | Speed: {cargoSpeed}
+    </div>
 
-        {status && (
-          <pre className="bg-black p-4 rounded text-sm overflow-auto">
-            {JSON.stringify(status, null, 2)}
-          </pre>
-        )}
+        
       </div>
     </div>
   );
