@@ -10,13 +10,18 @@ export default function Page() {
   const [cargoConnected, setCargoConnected] = useState(false);
   const [expressSpeed, setExpressSpeed] = useState(0);
   const [cargoSpeed, setCargoSpeed] = useState(0);
+  const [expressLight, setExpressLight] = useState(false);
   const [status, setStatus] = useState<any>(null);
 
+  const [mounted, setMounted] = useState(false);
 
-  const API = "http://192.168.0.87:8000";
+
+  //const API = "http://192.168.0.87:8000";
+  const API = "http://192.168.8.149:8000";
 
 
   useEffect(() => {
+    setMounted(true);
     getStatus();
   }, []);
 
@@ -92,6 +97,7 @@ type StatusResponse = {
       if (data.status === "error") {
         toast.error(data.message);
       } else {
+        setExpressSpeed(0);
         toast.success("Express stopped");
       }
     } catch {
@@ -99,7 +105,7 @@ type StatusResponse = {
     }
   };
 
-  const setExpressLight = async (brightness: number) => {
+  const setExpressLights = async (brightness: number) => {
     try {
       const res = await fetch(`${API}/express/light`, {
         method: "POST",
@@ -115,6 +121,7 @@ type StatusResponse = {
         throw new Error(data.message || "Error");
       }
 
+      setExpressLight(brightness > 0);
       toast.success(`Light: ${data.brightness}`);
     } catch (err: any) {
       toast.error(err.message);
@@ -134,6 +141,8 @@ type StatusResponse = {
       if (data.status === "error") {
         toast.error(data.message);
       } else {
+        setExpressLight(false);
+        setExpressSpeed(0);
         setExpressConnected(false);
         toast.success("Express disconnected");
       }
@@ -196,6 +205,7 @@ type StatusResponse = {
       if (data.status === "error") {
         toast.error(data.message);
       } else {
+        setCargoSpeed(0);
         toast.success("Cargo stopped");
       }
     } catch {
@@ -217,6 +227,7 @@ type StatusResponse = {
         toast.error(data.message);
       } else {
         setCargoConnected(false);
+        setCargoSpeed(0);
         toast.success("Cargo disconnected");
       }
     } catch {
@@ -239,14 +250,16 @@ type StatusResponse = {
 
     setStatus(data.data);
 
-    // opcjonalnie
     setExpressConnected(data.data.express.connected);
     setCargoConnected(data.data.cargo.connected);
+    setExpressLight(data.data.express.light);
 
   } catch (err: any) {
     toast.error(err.message);
   }
 };
+
+  if (!mounted) return null;
 
   return (
     <div className="space-y-10">
@@ -274,8 +287,8 @@ type StatusResponse = {
         </button>*/}
 
         <div className="mt-4 flex gap-2">
-          <button onClick={() => setExpressLight(100)} disabled={!expressConnected} className="btn">Lights ON</button>
-          <button onClick={() => setExpressLight(0)} disabled={!expressConnected} className="btn">Lights OFF</button>
+          <button onClick={() => setExpressLights(100)} disabled={!expressConnected || expressLight} className="btn">Lights ON</button>
+          <button onClick={() => setExpressLights(0)} disabled={!expressConnected || !expressLight} className="btn">Lights OFF</button>
         </div>
 
       </div>

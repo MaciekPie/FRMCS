@@ -15,6 +15,8 @@ class LegoTrain:
         self.speed = 0
         self.pos = float(start_pos)
         self.last_update = time.time()
+        self.light = 0
+        self.light_on = False
 
     async def connect(self):
         if self.client and self.client.is_connected:

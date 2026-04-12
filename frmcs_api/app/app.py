@@ -46,7 +46,7 @@ app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://192.168.0.87:3000"],
+    allow_origins=["http://localhost:3000", "http://192.168.0.87:3000", "http://192.168.8.149:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -177,7 +177,8 @@ async def status():
             "data": {
                 "express": {
                     "speed": express.speed,
-                    "connected": express.client.is_connected if express.client else False
+                    "connected": express.client.is_connected if express.client else False,
+                    "light": getattr(express, "light_on", False)
                 },
                 "cargo": {
                     "speed": cargo.speed,
