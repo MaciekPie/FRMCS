@@ -1,9 +1,9 @@
 //"use client";
-
+/*
 import { useState } from "react";
 import { toast } from "react-hot-toast";
 import { useEffect } from "react";
-
+*/
 
 export default function Page() {
   return <h1>FRMCS OK</h1>;
