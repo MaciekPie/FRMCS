@@ -6,7 +6,8 @@ import { useEffect } from "react";
 
 
 export default function Page() {
-  const [expressConnected, setExpressConnected] = useState(false);
+  return <h1>FRMCS OK</h1>;
+  {/*const [expressConnected, setExpressConnected] = useState(false);
   const [cargoConnected, setCargoConnected] = useState(false);
   const [expressSpeed, setExpressSpeed] = useState(0);
   const [cargoSpeed, setCargoSpeed] = useState(0);
@@ -264,7 +265,7 @@ type StatusResponse = {
     <div className="space-y-10">
       <h1 className="text-3xl font-bold text-center">FRMCS Control Panel</h1>
 
-      {/* EXPRESS */}
+      {/* EXPRESS */}{/*
       <div className="bg-gray-800 text-white p-6 rounded-2xl shadow">
         <h2 className="text-xl mb-4">Express</h2>
 
@@ -283,7 +284,7 @@ type StatusResponse = {
 
         {/*<button onClick={changeExpress} className="btn mt-2">
           Apply
-        </button>*/}
+        </button>*/}{/*
 
         <div className="mt-4 flex gap-2">
           <button onClick={() => setExpressLights(100)} disabled={!expressConnected || expressLight} className="btn">Lights ON</button>
@@ -292,7 +293,7 @@ type StatusResponse = {
 
       </div>
 
-      {/* CARGO */}
+      {/* CARGO */}{/*
       <div className="bg-gray-800 text-white p-6 rounded-2xl shadow">
         <h2 className="text-xl mb-4">Cargo</h2>
 
@@ -312,10 +313,10 @@ type StatusResponse = {
         {/*<button onClick={setCargo} className="btn mt-2">
           Apply
         </button>*/}
-        {/* Lights */}
+        {/* Lights */}{/*
       </div>
 
-      {/* STATUS */}
+      {/* STATUS */}{/*
       <div className="bg-white p-4 rounded text-sm space-y-2">
         <div>
           Express:{" "}
@@ -334,5 +335,5 @@ type StatusResponse = {
         </div>
       </div>
     </div>
-  );
+  );*/}
 }
