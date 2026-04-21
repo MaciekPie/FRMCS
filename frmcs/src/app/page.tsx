@@ -225,8 +225,8 @@ type StatusResponse = {
       if (data.status === "error") {
         toast.error(data.message);
       } else {
+          setCargoSpeed(0);
         setCargoConnected(false);
-        setCargoSpeed(0);
         toast.success("Cargo disconnected");
       }
     } catch {
@@ -252,6 +252,9 @@ type StatusResponse = {
     setExpressConnected(data.data.express.connected);
     setCargoConnected(data.data.cargo.connected);
     setExpressLight(data.data.express.light);
+
+    setExpressSpeed(data.data.express.speed);
+    setCargoSpeed(data.data.cargo.speed);
 
   } catch (err: any) {
     toast.error(err.message);

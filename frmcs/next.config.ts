@@ -5,6 +5,9 @@ const nextConfig: NextConfig = {
   output: "standalone"
 };
 
+module.exports = {
+  allowedDevOrigins: ['192.168.0.175'],
+}
 
 
 export default nextConfig;
